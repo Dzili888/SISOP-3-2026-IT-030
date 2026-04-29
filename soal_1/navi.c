@@ -1,7 +1,18 @@
 #include "protocol.h"
+#include <signal.h> // Tambahan library untuk menangkap sinyal (seperti Ctrl+C)
 
 int sock;
 int is_admin = 0;
+
+// Fungsi khusus untuk menangkap Ctrl+C (SIGINT)
+void handle_sigint(int sig) {
+    printf("\n[System] Disconnecting from The Wired...\n");
+    Packet p; 
+    p.type = TYPE_EXIT;
+    send(sock, &p, sizeof(p), 0); // Beritahu server bahwa user ini keluar
+    close(sock);
+    exit(0);
+}
 
 void *listen_server(void *arg) {
     Packet p;
@@ -28,6 +39,9 @@ void *listen_server(void *arg) {
 }
 
 int main() {
+    // Daftarkan fungsi handle_sigint untuk dieksekusi saat Ctrl+C ditekan
+    signal(SIGINT, handle_sigint);
+
     struct sockaddr_in serv_addr;
     char name[50];
 
@@ -94,7 +108,7 @@ int main() {
             if (cmd == 4) {
                 Packet p; p.type = TYPE_EXIT;
                 send(sock, &p, sizeof(p), 0);
-                printf("[System] Disconnecting from The Wired...\n");
+                printf("\n[System] Disconnecting from The Wired...\n");
                 break;
             } else {
                 Packet p; p.type = TYPE_CMD;
@@ -111,7 +125,8 @@ int main() {
             if (strcmp(input, "/exit") == 0) {
                 Packet p; p.type = TYPE_EXIT;
                 send(sock, &p, sizeof(p), 0);
-                printf("[System] Disconnecting from The Wired...\n");
+                // Ditambahkan \n di depan agar ada spasi 1 baris persis seperti di gambar soal
+                printf("\n[System] Disconnecting from The Wired...\n"); 
                 break;
             }
             if (strlen(input) > 0) {
